@@ -30,14 +30,20 @@ def load_iata_db():
     return city_iata
 
 def get_city_code(city, db):
-    if city in db:
-        return db[city]
-    else:
-        return -1
+    city = city.lower()
+    city = re.sub("озеро", "оз.", city)
+    return db.get(city)
+
 
 def get_url(code1,code2, date1, date2 = None):
     base = 'https://www.aviasales.ru/search/'
-    return base+code1+date1+code2+date2
+    day_month = '{:02}{:02}'.format(date1.day,date1.month)
+
+    res = base+code1+day_month+code2
+    if date2:
+        return  res + '{:02}{:02}'.format(date2.day,date2.month) + str(1)
+    else:
+        return res + str(1)
 
 def is_in_one_year_window(date):
     #dates must be less than a year away from NOW"""
@@ -70,9 +76,9 @@ def interpret_dates(str_containing_date):
          date1, date2 = m.group('date1'),m.group('date2')
 
          if date1:
-             date1 = dateparser.parse(date1)
+             date1 = dateparser.parse(date1, settings={'DATE_ORDER': 'DMY'})
          if date2:
-             date2 = dateparser.parse(date2)
+             date2 = dateparser.parse(date2, settings={'DATE_ORDER': 'DMY'})
          else:
              onewaytrip = True
 
@@ -100,17 +106,33 @@ def interpret_dates(str_containing_date):
         raise IncorrectDates('The input is incorrect', str_containing_date)
 
 
+# test dates input
+# interpret_dates('С 5 января 2018 по 8 марта')
+# interpret_dates('5 января - 8 марта')
+# interpret_dates('5 января-8 марта')
+# #interpret_dates('8 марта - 5 января')
+# interpret_dates('8 марта - 5 января 2019')
+# interpret_dates('5.01-8.03')
+# interpret_dates('5.01 по 8.03')
+# interpret_dates('5 сентября')
+# interpret_dates('5.01')
 #
-interpret_dates('С 5 января 2018 по 8 марта')
-interpret_dates('5 января - 8 марта')
-interpret_dates('5 января-8 марта')
-#interpret_dates('8 марта - 5 января')
-interpret_dates('8 марта - 5 января 2019')
-interpret_dates('5.01-8.03')
-interpret_dates('5.01 по 8.03')
-interpret_dates('5 сентября')
-interpret_dates('5.01')
+# interpret_dates('5.01 по блаблабла')
+# interpret_dates('блаблабла')
 
-interpret_dates('5.01 по блаблабла')
-interpret_dates('блаблабла')
+#test iata codes
+db = load_iata_db()
 
+print(get_city_code('Москва', db))
+
+print(get_city_code('Севастополь', db))
+
+print(get_city_code('остров корву', db))
+
+print(get_city_code('острова торрес', db))
+
+print(get_city_code('озеро бирскин', db))
+
+print(get_city_code('озеро байкал', db))
+
+print(get_url(get_city_code('Москва', db),get_city_code('Симферополь', db), interpret_dates('5.01')[0], date2 = None))
