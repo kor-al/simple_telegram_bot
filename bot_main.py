@@ -17,7 +17,7 @@ from userInterpretator import UserInterpretator, ErrorIncorrectDates,ErrorNotYea
 
 import logging
 
-TOKEN='661792378:AAH2ksyQmG2FE7V7tFweIlaS4va_Z3qLe0g'
+TOKEN='your token'
 REQUEST_KWARGS={
     'proxy_url': '',
     # Optional, if you need authentication:
