@@ -23,6 +23,7 @@ import json
 import re
 import dateparser
 import datetime
+from userInterpretator import UserInterpretator
 
 def load_iata_db():
     with open('city_IATA.json') as f:
@@ -119,9 +120,23 @@ def interpret_dates(str_containing_date):
         raise IncorrectDates('The input is incorrect', str_containing_date)
 
 
+def check_reg(pattern, string):
+    if re.match(pattern, string):
+        return True
+    else:
+        return False
+
+
+print(check_reg('^([\sA-Za-z0-9_-])*$', '5 january-8 march'))
+print(check_reg('^([\sA-Za-z0-9_.-])*$', '5.01-8.03'))
+print(check_reg('^([\sа-яА-Я0-9_.-])*$', '5 января-8 марта'))
+
+ui = UserInterpretator()
+
 # test dates input
 # interpret_dates('С 5 января 2018 по 8 марта')
-# interpret_dates('5 января - 8 марта')
+
+print(ui.interpret_dates('5 января-8 марта'))
 # interpret_dates('5 января-8 марта')
 # #interpret_dates('8 марта - 5 января')
 # interpret_dates('8 марта - 5 января 2019')

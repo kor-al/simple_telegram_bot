@@ -1,24 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Simple Bot to reply to Telegram messages
+# Based on examples of the telegram-bot library
+# Simple Bot to receive search urls of the Aviasales website.
 
 """
-Example of a bot-user conversation using ConversationHandler.
 Send /start to initiate the conversation.
 Press Ctrl-C on the command line or send a signal to the process to stop the
 bot.
 """
 
-from telegram import (ReplyKeyboardMarkup, ReplyKeyboardRemove)
+from telegram import (ReplyKeyboardMarkup, ReplyKeyboardRemove, ParseMode)
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, RegexHandler,
                           ConversationHandler)
 from userInterpretator import UserInterpretator, ErrorIncorrectDates,ErrorNotYearAhead,ErrorDateSeq
 
 import logging
-import re
 
-TOKEN='YOUR TOKEN'
+TOKEN='661792378:AAH2ksyQmG2FE7V7tFweIlaS4va_Z3qLe0g'
 REQUEST_KWARGS={
     'proxy_url': 'socks5://deimos.public.opennetwork.cc:1090',
     # Optional, if you need authentication:
@@ -49,7 +48,8 @@ def start(bot, update):
 def cancel(bot, update):
     user = update.message.from_user
     logger.info("User %s canceled the conversation.", user.first_name)
-    update.message.reply_text('До свидания, увидимся.',
+    update.message.reply_text('До свидания, увидимся.\n'
+                              'Отправьте /start, чтобы снова начать разговор.',
                               reply_markup=ReplyKeyboardRemove())
 
     return ConversationHandler.END
@@ -98,8 +98,10 @@ def input_dates(bot, update, user_data):
         date1, date2 = interpretator.interpret_dates(string_with_dates)
     except ErrorIncorrectDates as e:
         bot.send_message(chat_id=update.message.chat_id, text="Не совсем вас понял.\n"
-                                                              "Пожалуйста, укажите в какой период вы планируете поездку.\n}"
-                                                              "Если вас интересуют билеты в один конец, отправьте только дату вылета.")
+                                                              "Пожалуйста, укажите в какой период вы планируете поездку.\n"
+                                                              "Например, _с 30 октября по 8 марта_.\n"
+                                                              "Если вас интересуют билеты в один конец, отправьте только дату вылета.",
+                         parse_mode=ParseMode.MARKDOWN)
         logger.info("User %s  has sent incorrect dates: %s.", user.first_name, string_with_dates)
         return TYPING_DATES
     except ErrorNotYearAhead as e:
@@ -125,18 +127,20 @@ def input_dates(bot, update, user_data):
 def show_confirm_form(update, user_data):
 
     reply_keyboard = [['Да', 'Нет']]
-    answer = "Спасибо! Всё ли верно: вы собираетесь отправиться из {} {} {}"
+    answer = "Спасибо! Всё ли верно: вы собираетесь отправиться *из {}* *{}* *{}*"
     city_ro = interpretator.get_city_case(user_data['departure_city'], 'ro')
     city_vi = interpretator.get_city_case(user_data['arrival_city'], 'vi')
     str_date1 = interpretator.convert_one_date_to_ru_str(user_data['departure'])
     if user_data['return'] is None:
         update.message.reply_text(answer.format(city_ro, city_vi, str_date1),
+                                  parse_mode=ParseMode.MARKDOWN,
                                   reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
     else:
         str_date2 = interpretator.convert_one_date_to_ru_str(user_data['return'])
-        answer = answer + " и вернуться {}?"
+        answer = answer + " и вернуться *{}*?"
         update.message.reply_text(answer.format(city_ro, city_vi, str_date1, str_date2),
-            reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+                                  parse_mode=ParseMode.MARKDOWN,
+                                  reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
 
 
 def confirm(bot, update, user_data):
@@ -154,7 +158,8 @@ def confirm(bot, update, user_data):
     else:
         logger.info("User %s doesn't  confirmed the data.", user.first_name)
         update.message.reply_text("Ладно, попробуем еще раз...\n"
-                                  "Так откуда вы все-таки полетите?")
+                                  "Так откуда вы все-таки полетите?",
+                                  reply_markup = ReplyKeyboardRemove())
         return TYPING_DEPARTURE
 
 def another_query(bot, update, user_data):
@@ -164,14 +169,16 @@ def another_query(bot, update, user_data):
     if decision == 'Да':
         logger.info("User %s  wants to enter another trip", user.first_name)
         update.message.reply_text("Хорошо! Начнем сначала...\n"
-                                  "Откуда вы полетите на этот раз?")
+                                  "Откуда вы полетите на этот раз?",
+                                  reply_markup=ReplyKeyboardRemove())
         return TYPING_DEPARTURE
     else:
         logger.info("User %s doesn't  want to enter another trip", user.first_name)
         # update.message.reply_text("До встречи, {}!", user_data['name'])
         # return TYPING_DEPARTURE
         update.message.reply_text("Окей, до свидания, {}.\n"
-                                  "Отправьте /start, чтобы снова начать разговор.\n".format(user_data['name']))
+                                  "Отправьте /start, чтобы снова начать разговор.\n".format(user_data['name']),
+                                  reply_markup=ReplyKeyboardRemove())
         return ConversationHandler.END
 
 
@@ -198,13 +205,13 @@ def main():
         entry_points=[CommandHandler('start', start)],
 
         states={
-            TYPING_NAME: [RegexHandler('^([A-Za-z0-9-_]|[а-яА-ЯёЁ])*$', input_name,pass_user_data=True)],
+            TYPING_NAME: [RegexHandler('^([\sа-яА-ЯёЁA-Za-z0-9_-])*$', input_name,pass_user_data=True)],
 
-            TYPING_DEPARTURE : [RegexHandler('^[ -[а-яА-ЯёЁ]*$', input_departure,pass_user_data=True)],
+            TYPING_DEPARTURE : [RegexHandler('^([\sа-яА-ЯёЁ0-9-])*$', input_departure,pass_user_data=True)],
 
-            TYPING_ARRIVAL:  [RegexHandler('^[ -[а-яА-ЯёЁ]*$', input_arrival,pass_user_data=True)],
+            TYPING_ARRIVAL:  [RegexHandler('^([\sа-яА-ЯёЁ0-9-])*$', input_arrival,pass_user_data=True)],
 
-            TYPING_DATES: [RegexHandler('^[0-9.-_ а-яА-ЯёЁ]*$', input_dates,pass_user_data=True)],
+            TYPING_DATES: [RegexHandler('^([\sа-яА-Я0-9_.-])*$', input_dates,pass_user_data=True)],
 
             CHOOSE_CONFIRM: [RegexHandler('^(Да|Нет)$', confirm, pass_user_data=True)],
 

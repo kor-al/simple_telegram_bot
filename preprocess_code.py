@@ -4,12 +4,18 @@ import re
 
 """
 http://api.travelpayouts.com/data/ru/
-Rearrange the response as {'city (ru)':'IATA code'}
+Rearrange the response as {'city (ru)':{ code = 'IATA code', cases = {cases}, country = 'country_code' }
 """
 
 with open('cities.json', encoding='utf-8') as f:
     data = json.load(f)
-#
+
+"""
+First: explore the data in terms of names of cities and their codes. 
+Save all the cities with the same name in a corresponding list in the resulting dictionary
+result = {name : [cities with the same name but different IATA codes]}
+"""
+
 result = {} #
 for d in data:
     if d['name']:
@@ -23,9 +29,12 @@ for d in data:
         else:
             result[name]= [dict(code = d['code'], cases = d['cases'], country = d['country_code'])]
 
-'''Problem: there are cities with the same names but in different countries. 
-Solution for now: take only one of them. If there 2 cities with the same name in the US and elsewhere, prefer the second one,
- as there are too many cities with european names in the US while they are not that popular in terms of travelling'''
+'''
+Problem: there are cities with the same names but in different countries. 
+Solution for now: take only one of them. If there N cities with the same name and some of them are in the US and
+others are elsewhere, prefer the second group and choose the first city-country pair among them.
+(Reason: there are too many cities with european names in the US while they are not that popular in terms of travelling)
+ '''
 
 filtered_result = {}
 count_cities_the_same_name = 0
@@ -46,13 +55,7 @@ for n in result:
 print('Cities with the same name:', count_cities_the_same_name)
 #
 print(filtered_result['москва'])
-print(filtered_result['париж'])
 print(filtered_result['лондон'])
 
-#
-# #
-# pprint(result)
-# print(len(result))
-# #
 with open('city_IATA.json', 'w') as out:
       json.dump(filtered_result, out)

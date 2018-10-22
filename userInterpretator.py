@@ -125,6 +125,10 @@ class UserInterpretator:
 
 
     def convert_one_date_to_ru_str(self, date):
+        """
+        :param date: date in datetime format
+        :return: returns date (day + month) in russian words, for example: 5.03 ==> 5 марта
+        """
         date_str = '{dt.day} {dt:%B}'.format(dt=date).split(' ')
         #date_str = date.strftime('%d %B').split(' ')
         date_str[1] = self.months[date_str[1]]
