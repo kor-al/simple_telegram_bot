@@ -20,11 +20,11 @@ import re
 
 TOKEN='YOUR TOKEN'
 REQUEST_KWARGS={
-    'proxy_url': 'socks5://deimos.public.opennetwork.cc:1090',
+    'proxy_url': '',
     # Optional, if you need authentication:
     'urllib3_proxy_kwargs': {
-        'username': '261350784',
-        'password': 'fRMSr9ni',
+        'username': '',
+        'password': '',
     }
 }
 
