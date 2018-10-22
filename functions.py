@@ -32,7 +32,7 @@ def load_iata_db():
 def get_city_code(city, db):
     city = city.lower()
     city = re.sub("озеро", "оз.", city)
-    return db.get(city)
+    return db.get(city)['code']
 
 
 def get_url(code1,code2, date1, date2 = None):
@@ -62,6 +62,19 @@ class NoSuggestion(ValueError):
    """cannot suggest any trips: dates must be less than a year away from NOW"""
    pass
 
+
+def get_city_case(city,db,case='ro'):
+    # case ro = откуда?
+    # case vi = куда?
+    city = city.lower()
+    cases = db.get(city)['cases']
+    if case in cases:
+        return cases[case]
+    elif case == 'vi':
+        return 'в' + city.capitalize()
+    else:
+        # return nominative
+        return city
 
 def interpret_dates(str_containing_date):
     print('>>',str_containing_date)
@@ -122,17 +135,19 @@ def interpret_dates(str_containing_date):
 
 #test iata codes
 db = load_iata_db()
-
+#
 print(get_city_code('Москва', db))
+print(get_city_case('Париж',db, 'vi'))
+#
+# print(get_city_code('Севастополь', db))
+#
+# print(get_city_code('остров корву', db))
+#
+# print(get_city_code('острова торрес', db))
+#
+# print(get_city_code('озеро бирскин', db))
+#
+# print(get_city_code('озеро байкал', db))
+#
+# print(get_url(get_city_code('Москва', db),get_city_code('Симферополь', db), interpret_dates('5.01')[0], date2 = None))
 
-print(get_city_code('Севастополь', db))
-
-print(get_city_code('остров корву', db))
-
-print(get_city_code('острова торрес', db))
-
-print(get_city_code('озеро бирскин', db))
-
-print(get_city_code('озеро байкал', db))
-
-print(get_url(get_city_code('Москва', db),get_city_code('Симферополь', db), interpret_dates('5.01')[0], date2 = None))
