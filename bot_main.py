@@ -18,7 +18,7 @@ from userInterpretator import UserInterpretator, ErrorIncorrectDates,ErrorNotYea
 import logging
 import re
 
-TOKEN='661792378:AAH2ksyQmG2FE7V7tFweIlaS4va_Z3qLe0g'
+TOKEN='YOUR TOKEN'
 REQUEST_KWARGS={
     'proxy_url': 'socks5://deimos.public.opennetwork.cc:1090',
     # Optional, if you need authentication:
