@@ -27,32 +27,32 @@ for d in data:
 Solution for now: take only one of them. If there 2 cities with the same name in the US and elsewhere, prefer the second one,
  as there are too many cities with european names in the US while they are not that popular in terms of travelling'''
 
+filtered_result = {}
 count_cities_the_same_name = 0
 for n in result:
     if len(result[n])>1:
         count_cities_the_same_name+=1
-        print(n)
         countries = [c['country'] for c in result[n]]
         if len(set(countries)) == 1:
-            result[n] = result[n][0]
-            print(1)
+            filtered_result[n] = result[n][0]
         else:
-            print(countries)
             is_US = [c == 'US' for c in countries]
-            if (len(countries) - sum(is_US)) == 1:
-                ind = is_US.index(False)
-                result[n] = result[n][ind] # any of countries that are not us
+            ind = is_US.index(False)
+            #print(n, countries )
+            filtered_result[n] = result[n][ind] # any of countries that are not us
     else:
-        result[n] = result[n][0]
+        filtered_result[n] = result[n][0]
 
 print('Cities with the same name:', count_cities_the_same_name)
-
-print(result['москва'])
-print(result['лондон'])
+#
+print(filtered_result['москва'])
+print(filtered_result['париж'])
+print(filtered_result['лондон'])
 
 #
+# #
 # pprint(result)
 # print(len(result))
 # #
-# with open('city_IATA.json', 'w') as out:
-#       json.dump(result, out)
+with open('city_IATA.json', 'w') as out:
+      json.dump(filtered_result, out)

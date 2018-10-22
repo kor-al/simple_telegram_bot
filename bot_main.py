@@ -13,8 +13,7 @@ bot.
 from telegram import (ReplyKeyboardMarkup, ReplyKeyboardRemove)
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, RegexHandler,
                           ConversationHandler)
-from telegram.ext import BaseFilter
-from userInterpretator import UserInterpretator, ErrorIncorrectDates,ErrorNoSuggestion, ErrorIncorrectName
+from userInterpretator import UserInterpretator, ErrorIncorrectDates,ErrorNotYearAhead,ErrorDateSeq
 
 import logging
 import re
@@ -37,27 +36,6 @@ logger = logging.getLogger(__name__)
 interpretator = UserInterpretator()
 
 TYPING_NAME, TYPING_DEPARTURE, TYPING_ARRIVAL, TYPING_DATES, CHOOSE_CONFIRM, ONCE_AGAIN = range(6)
-
-
-
-# class FilterName(BaseFilter):
-#     def filter(self, message):
-#         name = message.text
-#         if re.match("^[ А-Za-zА-Яа-я0-9_-]*$", name):
-#             return True
-#         else:
-#             return False
-
-# class FilterCity(BaseFilter):
-#     def filter(self, message):
-#         city = message.text
-#         if re.match('^[ \u0401\u0451\u0410-\u044f]*',city):
-#             code = interpretator.get_city_code(city)
-#             if code:
-#             return True
-#         else:
-#             return False
-
 
 
 def start(bot, update):
@@ -90,7 +68,7 @@ def input_departure(bot, update, user_data):
     departure_city = update.message.text
     iata = interpretator.get_city_code(departure_city)
     if iata is None:
-         bot.send_message(chat_id=update.message.chat_id, text="Извините, я не знаю этот город. Может быть выберете другой город поблизости?")
+         bot.send_message(chat_id=update.message.chat_id, text="Кажется, я не знаю этот город. Может быть вы выберете другой город поблизости?")
          logger.info("User %s  has sent an incorrect departure city %s.", user.first_name, departure_city)
          return TYPING_DEPARTURE
     user_data['departure_city'] = departure_city
@@ -104,7 +82,7 @@ def input_arrival(bot, update, user_data):
     arrival_city = update.message.text
     iata = interpretator.get_city_code(arrival_city)
     if iata is None:
-        bot.send_message(chat_id=update.message.chat_id, text="Извините, я не знаю этот город. Может быть выберете другой город поблизости?")
+        bot.send_message(chat_id=update.message.chat_id, text="Похоже, я не знаю этот город. Может быть вы выберете другой город поблизости?")
         logger.info("User %s  has sent an incorrect destination %s.", user.first_name, arrival_city)
         return TYPING_ARRIVAL
     user_data['arrival_city'] = arrival_city
@@ -114,22 +92,25 @@ def input_arrival(bot, update, user_data):
     return TYPING_DATES
 
 def input_dates(bot, update, user_data):
-    date1, date2 = -1,-1
     user = update.message.from_user
     string_with_dates = update.message.text
     try:
         date1, date2 = interpretator.interpret_dates(string_with_dates)
     except ErrorIncorrectDates as e:
-        bot.send_message(chat_id=update.message.chat_id, text="Извините, не совсем вас понял.\n"
+        bot.send_message(chat_id=update.message.chat_id, text="Не совсем вас понял.\n"
                                                               "Пожалуйста, укажите в какой период вы планируете поездку.\n}"
                                                               "Если вас интересуют билеты в один конец, отправьте только дату вылета.")
-        logger.info(str(e))
         logger.info("User %s  has sent incorrect dates: %s.", user.first_name, string_with_dates)
         return TYPING_DATES
-    except ErrorNoSuggestion as e:
-        bot.send_message(chat_id=update.message.chat_id, text="Извините, не могу ничего посоветовать на эти даты.")
-        logger.info(str(e))
-        logger.info("User %s  has sent old or 'more than a year further from now' dates: %s, %s,%s", user.first_name, string_with_dates, str(date1), str(date2))
+    except ErrorNotYearAhead as e:
+        logger.info(e)
+        bot.send_message(chat_id=update.message.chat_id, text="К сожалению, могу советовать перелеты только в течение года от текущей даты.")
+        logger.info("User %s  has sent old or 'more than a year from now' dates: %s", user.first_name, string_with_dates)
+        return TYPING_DATES
+    except ErrorDateSeq as e:
+        logger.info(e)
+        bot.send_message(chat_id=update.message.chat_id, text="Путешествуете во времени? Боюсь, не могу вам ничего посоветовать.")
+        logger.info("User %s  has sent old or 'more than a year from now' dates: %s", user.first_name, string_with_dates)
         return TYPING_DATES
     else:
         user_data['departure'] = date1
@@ -137,17 +118,16 @@ def input_dates(bot, update, user_data):
 
         logger.info("User %s has sent departure and return dates: from %s to %s.", user.first_name, str(date1),str(date2))
 
-        confirm_form(update, user_data)
+        show_confirm_form(update, user_data)
 
         return CHOOSE_CONFIRM
 
-def confirm_form(update, user_data):
+def show_confirm_form(update, user_data):
 
     reply_keyboard = [['Да', 'Нет']]
     answer = "Спасибо! Всё ли верно: вы собираетесь отправиться из {} {} {}"
     city_ro = interpretator.get_city_case(user_data['departure_city'], 'ro')
     city_vi = interpretator.get_city_case(user_data['arrival_city'], 'vi')
-    logger.info('*'+city_vi+ '**' + city_ro )
     str_date1 = interpretator.convert_one_date_to_ru_str(user_data['departure'])
     if user_data['return'] is None:
         update.message.reply_text(answer.format(city_ro, city_vi, str_date1),
@@ -180,6 +160,7 @@ def confirm(bot, update, user_data):
 def another_query(bot, update, user_data):
     user = update.message.from_user
     decision = update.message.text
+    logger.info("User %s  made a decision if she wants to continue: %s", user.first_name, decision)
     if decision == 'Да':
         logger.info("User %s  wants to enter another trip", user.first_name)
         update.message.reply_text("Хорошо! Начнем сначала...\n"
@@ -187,16 +168,20 @@ def another_query(bot, update, user_data):
         return TYPING_DEPARTURE
     else:
         logger.info("User %s doesn't  want to enter another trip", user.first_name)
-        update.message.reply_text("До встречи, {}!", user_data['name'])
+        # update.message.reply_text("До встречи, {}!", user_data['name'])
+        # return TYPING_DEPARTURE
+        update.message.reply_text("Окей, до свидания, {}.\n"
+                                  "Отправьте /start, чтобы снова начать разговор.\n".format(user_data['name']))
         return ConversationHandler.END
+
 
 def error(bot, update, error):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, error)
 
 def unknown(bot, update):
-    logger.warning('Update "%s" is unknown', update)
-    bot.send_message(chat_id=update.message.chat_id, text="Извините, не совсем вас понимаю.")
+    logger.warning('Update "%s" is unknown', update.message.text)
+    bot.send_message(chat_id=update.message.chat_id, text="Извините, не совсем вас понимаю. Не могли бы вы сформулировать по-другому?")
 
 
 
@@ -213,13 +198,13 @@ def main():
         entry_points=[CommandHandler('start', start)],
 
         states={
-            TYPING_NAME: [RegexHandler('^([A-Za-z0-9-_]|[\u0401\u0451\u0410-\u044f])*$', input_name,pass_user_data=True)],
+            TYPING_NAME: [RegexHandler('^([A-Za-z0-9-_]|[а-яА-ЯёЁ])*$', input_name,pass_user_data=True)],
 
-            TYPING_DEPARTURE : [RegexHandler('^[ \u0401\u0451\u0410-\u044f]*$', input_departure,pass_user_data=True)],
+            TYPING_DEPARTURE : [RegexHandler('^[ -[а-яА-ЯёЁ]*$', input_departure,pass_user_data=True)],
 
-            TYPING_ARRIVAL:  [RegexHandler('^[ \u0401\u0451\u0410-\u044f]*$', input_arrival,pass_user_data=True)],
+            TYPING_ARRIVAL:  [RegexHandler('^[ -[а-яА-ЯёЁ]*$', input_arrival,pass_user_data=True)],
 
-            TYPING_DATES: [RegexHandler('^[0-9.-_ \u0401\u0451\u0410-\u044f]*$', input_dates,pass_user_data=True)],
+            TYPING_DATES: [RegexHandler('^[0-9.-_ а-яА-ЯёЁ]*$', input_dates,pass_user_data=True)],
 
             CHOOSE_CONFIRM: [RegexHandler('^(Да|Нет)$', confirm, pass_user_data=True)],
 

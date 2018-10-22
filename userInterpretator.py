@@ -3,17 +3,16 @@ import re
 import dateparser
 import datetime
 
-
 class ErrorIncorrectDates(ValueError):
-    """incorrect dates"""
+    """Incorrect dates in terms of spelling"""
     pass
 
-class ErrorIncorrectName(ValueError):
-    """incorrect name"""
+class ErrorNotYearAhead(ValueError):
+    """Aviasales can suggest only for the year ahead."""
     pass
 
-class ErrorNoSuggestion(ValueError):
-    """cannot suggest any trips: dates must be less than a year away from NOW"""
+class ErrorDateSeq(ValueError):
+    """A return date is earlier than a departure"""
     pass
 
 class UserInterpretator:
@@ -28,9 +27,9 @@ class UserInterpretator:
                 self.city_iata = json.load(f)
 
     def _initiate_rus_months(self):
-        self.months = {'December': 'Декабря', 'January': 'Января', 'February': 'Февраля', 'March' : 'Марта', 'April': 'Апреля',
-                  'May': 'Мая', 'June': 'Июня', 'July': 'Июля', 'August': 'Августа', 'September': 'Сентября',
-                  'October': 'Октября', 'November': 'Ноября'}
+        self.months = {'December': 'декабря', 'January': 'января', 'February': 'февраля', 'March' : 'марта', 'April': 'апреля',
+                  'May': 'мая', 'June': 'июня', 'July': 'июля', 'August': 'августа', 'September': 'сентября',
+                  'October': 'октября', 'November': 'ноября'}
 
     def get_city_code(self, city):
         city = city.lower()
@@ -55,6 +54,12 @@ class UserInterpretator:
             return city
         #
     def get_url(self,code1, code2, date1, date2=None):
+        '''url looks like https://www.aviasales.ru/search/MOW0705PAR08051 ,
+        where MOW and PAR are IATA codes of departure and arrival cities
+        0705 and 0805 are departure and return dates
+        1 is for a '1-person' ticket
+        '''
+
         day_month = '{:02}{:02}'.format(date1.day, date1.month)
         res = self.base + code1 + day_month + code2
         if date2:
@@ -63,7 +68,7 @@ class UserInterpretator:
                 return res + str(1)
 
     def _is_in_one_year_window(self,date):
-        # dates must be less than a year away from NOW"""
+        # on the Aviasales website, dates must be less than a year away from NOW
         now = datetime.datetime.now()
         valid_now = lambda d:  now.date() <= d.date() <= now.replace(year=now.year + 1).date()
         if valid_now(date):
@@ -71,20 +76,18 @@ class UserInterpretator:
         else:
             return False
 
-    def parse_name(self,name):
-        if re.match("^[ A-Za-z0-9_-]*$", name):
-            return name
-        else:
-            raise ErrorIncorrectName('Incorrect name',name)
-
 
     def interpret_dates(self,str_containing_date):
+        '''
+        :param str_containing_date: string with two dates or only one (only departure)
+        :return: parsed dates in the datetime format - but only only date not time
+        '''
+
         str_containing_date = str_containing_date.lower()
-        date1, date2 = None, None
         str_containing_date = re.sub("\s\s+", " ", str_containing_date)  # removes multiple spaces in a string
         onewaytrip = False
 
-        template = r'(с\s)*(?P<date1>\d+.*?)((\s?(по|-)\s?(?P<date2>\d+.*))|$)'
+        template = r'(с\s)*(?P<date1>\d+.*?)((\s?(до|по|-)\s?(?P<date2>\d+.*))|$)'
         m = re.match(template, str_containing_date)
         if m:
             # print('date1:', m.group('date1'),' date2: ', m.group('date2'))
@@ -93,7 +96,7 @@ class UserInterpretator:
             if date1:
                 date1 = dateparser.parse(date1, settings={'DATE_ORDER': 'DMY','PREFER_DATES_FROM': 'future'})
             if date2:
-                date2 = dateparser.parse(date2, settings={'DATE_ORDER': 'DMY'})
+                date2 = dateparser.parse(date2, settings={'DATE_ORDER': 'DMY','PREFER_DATES_FROM': 'future'})
             else:
                 onewaytrip = True
 
@@ -108,13 +111,13 @@ class UserInterpretator:
                                 #print('<<<', date1.date(), date2.date())
                                 return date1.date(), date2.date()
                             else:
-                                raise ErrorIncorrectDates('The order of dates is incorrect', date1, date2)
+                                raise ErrorDateSeq('The order of dates is incorrect', date1, date2)
                         else:
-                            raise ErrorNoSuggestion('The departure date is more than a year away', date2)
+                            raise ErrorNotYearAhead('The arrival date is not in the year from now', date2)
                     else:
                         raise ErrorIncorrectDates('The arrival date is incorrect', date2)
                 else:
-                    raise ErrorNoSuggestion('The arrival date is more than a year away', date1)
+                    raise ErrorNotYearAhead('The arrival date is not in the year from now', date1)
             else:
                 raise ErrorIncorrectDates('The departure date is incorrect', date2)
         else:
