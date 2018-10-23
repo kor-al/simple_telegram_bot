@@ -2,7 +2,7 @@
 
 This bot is implemented using the [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot) and [dateparser](https://pypi.org/project/dateparser/) libraries. The bot is available on Telegram as [@airticket_simple_bot](http://telegram.me/airticket_simple_bot).
 
-This repo contains a source code. The file [preprocess_code](https://github.com/kor-al/simple_telegram_bot/blob/master/preprocess_code.py) produces the table of cities that is required to deploy a bot.  The [states diagram](https://github.com/kor-al/simple_telegram_bot/blob/master/states.jpg) shows the structure of a conversation.
+This repo contains source code. The file [preprocess_code](https://github.com/kor-al/simple_telegram_bot/blob/master/preprocess_code.py) produces the table of cities that is required to deploy a bot.  The [states diagram](https://github.com/kor-al/simple_telegram_bot/blob/master/states.jpg) shows the structure of a conversation.
 
 ### Example:
 
