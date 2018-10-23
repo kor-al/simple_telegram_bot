@@ -4,6 +4,8 @@ This bot is implemented using the [python-telegram-bot](https://github.com/pytho
 
 This repo contains source code. The file [preprocess_code](https://github.com/kor-al/simple_telegram_bot/blob/master/preprocess_code.py) produces the table of cities that is required to deploy a bot.  The [states diagram](https://github.com/kor-al/simple_telegram_bot/blob/master/states.jpg) shows the structure of a conversation.
 
+Currently, to be parsed correctly, dates have to be in one of the following formats (spaces are optional): с? <date1> (по|до|-) <date2> or just <date1>. For example, 'с 14 ноября до 8 декабря', '5-10 декабря', '10 мая 2019'.
+
 ### Example:
 
 **bot**: Здравствуйте, я помогу вам с оформлением авиабилетов. Как я могу к вам обращаться? <br />
