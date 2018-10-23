@@ -7,6 +7,7 @@ The file [preprocess_code](https://github.com/kor-al/simple_telegram_bot/blob/ma
 ### Example:
 
 **bot**: Здравствуйте, я помогу вам с оформлением авиабилетов. Как я могу к вам обращаться? <br />
+**bot**: Отправьте /cancel, чтобы закончить разговор. <br />
 Сурок <br />
 **bot**: Сурок, откуда вы полетите?<br />
 Самара<br />
