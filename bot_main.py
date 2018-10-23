@@ -13,7 +13,7 @@ bot.
 from telegram import (ReplyKeyboardMarkup, ReplyKeyboardRemove, ParseMode)
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, RegexHandler,
                           ConversationHandler)
-from userInterpreter import UserInterpreter, ErrorIncorrectDates,ErrorNotYearAhead,ErrorDateSeq
+from userInterpreter import UserInterpreter, ErrorIncorrectDate, ErrorCannotParseDate, ErrorNotYearAhead,ErrorDateSeq
 
 import logging
 
@@ -94,17 +94,20 @@ def input_dates(bot, update, user_data):
     string_with_dates = update.message.text
     try:
         date1, date2 = interpretator.interpret_dates(string_with_dates)
-    except ErrorIncorrectDates as e:
+    except (ErrorCannotParseDate, ErrorIncorrectDate) as e:
         bot.send_message(chat_id=update.message.chat_id, text="Не совсем вас понял.\n"
                                                               "Пожалуйста, укажите в какой период вы планируете поездку.\n"
                                                               "Например, _с 30 октября по 8 марта_.\n"
                                                               "Если вас интересуют билеты в один конец, отправьте только дату вылета.",
                          parse_mode=ParseMode.MARKDOWN)
-        logger.info("User %s  has sent incorrect dates: %s.", user.first_name, string_with_dates)
+        logger.info("User %s  has sent incorrect input: %s.", user.first_name, string_with_dates)
         return TYPING_DATES
     except ErrorNotYearAhead as e:
         logger.info(e)
-        bot.send_message(chat_id=update.message.chat_id, text="К сожалению, могу советовать перелеты только в течение года от текущей даты.")
+        parsed_date = interpretator.convert_one_date_to_ru_str(e.get_date(), use_year = True)
+        bot.send_message(chat_id=update.message.chat_id, text="Вы имели в виду {}?\n"
+                                                              "К сожалению, могу советовать перелеты "
+                                                              "только в течение года от текущей даты.".format(parsed_date))
         logger.info("User %s  has sent old or 'more than a year from now' dates: %s", user.first_name, string_with_dates)
         return TYPING_DATES
     except ErrorDateSeq as e:
