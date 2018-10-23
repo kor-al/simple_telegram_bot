@@ -23,7 +23,7 @@ import json
 import re
 import dateparser
 import datetime
-from userInterpretator import UserInterpretator
+from userInterpreter import UserInterpreter
 
 def load_iata_db():
     with open('city_IATA.json') as f:
@@ -131,7 +131,7 @@ print(check_reg('^([\sA-Za-z0-9_-])*$', '5 january-8 march'))
 print(check_reg('^([\sA-Za-z0-9_.-])*$', '5.01-8.03'))
 print(check_reg('^([\sа-яА-Я0-9_.-])*$', '5 января-8 марта'))
 
-ui = UserInterpretator()
+ui = UserInterpreter()
 
 # test dates input
 # interpret_dates('С 5 января 2018 по 8 марта')
