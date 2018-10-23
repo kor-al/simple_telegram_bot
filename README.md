@@ -2,7 +2,7 @@
 
 This bot is implemented using the [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot) and [dateparser](https://pypi.org/project/dateparser/) libraries.
 
-The file [preprocess_code](https://github.com/kor-al/simple_telegram_bot/blob/master/preprocess_code.py) produces the table of cities that is required for the bot to work properly.
+The file [preprocess_code](https://github.com/kor-al/simple_telegram_bot/blob/master/preprocess_code.py) produces the table of cities that is required for the bot to work properly.  The [states diagram](https://github.com/kor-al/simple_telegram_bot/blob/master/states.jpg) shows the ConversationHandler organization.
 
 ### Example:
 
