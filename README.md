@@ -1,4 +1,4 @@
-# simple_telegram_bot
+# airline tickets simple telegram bot
 
 This bot is implemented using the [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot) and [dateparser](https://pypi.org/project/dateparser/) libraries.
 
