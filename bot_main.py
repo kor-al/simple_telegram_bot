@@ -13,17 +13,17 @@ bot.
 from telegram import (ReplyKeyboardMarkup, ReplyKeyboardRemove, ParseMode)
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, RegexHandler,
                           ConversationHandler)
-from userInterpretator import UserInterpretator, ErrorIncorrectDates,ErrorNotYearAhead,ErrorDateSeq
+from userInterpreter import UserInterpreter, ErrorIncorrectDates,ErrorNotYearAhead,ErrorDateSeq
 
 import logging
 
-TOKEN='661792378:AAH2ksyQmG2FE7V7tFweIlaS4va_Z3qLe0g'
+TOKEN=' '
 REQUEST_KWARGS={
-    'proxy_url': '',
+    'proxy_url': 'socks5:// : ',
     # Optional, if you need authentication:
     'urllib3_proxy_kwargs': {
-        'username': '',
-        'password': '',
+        'username': ' ',
+        'password': ' ',
     }
 }
 
@@ -32,23 +32,21 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
                     level=logging.INFO)
 
 logger = logging.getLogger(__name__)
-interpretator = UserInterpretator()
+interpretator = UserInterpreter()
 
-TYPING_NAME, TYPING_DEPARTURE, TYPING_ARRIVAL, TYPING_DATES, CHOOSE_CONFIRM, ONCE_AGAIN = range(6)
+TYPING_NAME, TYPING_DEPARTURE, TYPING_ARRIVAL, TYPING_DATES, CHOOSE_CONFIRM, START_AGAIN = range(6)
 
 
 def start(bot, update):
     update.message.reply_text(
         "Здравствуйте, я помогу вам с оформлением авиабилетов. Как я могу к вам обращаться?\n"
         "Отправьте /cancel, чтобы закончить разговор.\n")
-
-
-    return TYPING_NAME#RConversationHandler.END
+    return TYPING_NAME
 
 def cancel(bot, update):
     user = update.message.from_user
     logger.info("User %s canceled the conversation.", user.first_name)
-    update.message.reply_text('До свидания, увидимся.\n'
+    update.message.reply_text('До свидания.\n'
                               'Отправьте /start, чтобы снова начать разговор.',
                               reply_markup=ReplyKeyboardRemove())
 
@@ -154,7 +152,7 @@ def confirm(bot, update, user_data):
         update.message.reply_text('Отлично. Предлагаю вам следующие варианты перелета: {}\n'
                                   'Хотите обсудить другую поездку?'.format(url_result),
             reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
-        return ONCE_AGAIN
+        return START_AGAIN
     else:
         logger.info("User %s doesn't  confirmed the data.", user.first_name)
         update.message.reply_text("Ладно, попробуем еще раз...\n"
@@ -215,7 +213,7 @@ def main():
 
             CHOOSE_CONFIRM: [RegexHandler('^(Да|Нет)$', confirm, pass_user_data=True)],
 
-            ONCE_AGAIN: [RegexHandler('^(Да|Нет)$', another_query, pass_user_data=True)],
+            START_AGAIN: [RegexHandler('^(Да|Нет)$', another_query, pass_user_data=True)],
         },
 
         fallbacks=[CommandHandler('cancel', cancel),MessageHandler(Filters.text, unknown)]
