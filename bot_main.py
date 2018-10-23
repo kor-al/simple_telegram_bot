@@ -17,7 +17,11 @@ from userInterpreter import UserInterpreter, ErrorIncorrectDates,ErrorNotYearAhe
 
 import logging
 
+<<<<<<< HEAD
 TOKEN=' '
+=======
+TOKEN='your token'
+>>>>>>> d8c13f92b56f2e96e0f54cb0e5320dab6c16ef54
 REQUEST_KWARGS={
     'proxy_url': 'socks5:// : ',
     # Optional, if you need authentication:
